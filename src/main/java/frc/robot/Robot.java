@@ -4,88 +4,85 @@
 
 package frc.robot;
 
-
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Commands.DriveFieldRelative;
-
-
+import com.ctre.phoenix6.SignalLogger;
 
 public class Robot extends TimedRobot {
-  private Command m_autonomousCommand;
-
-  private RobotContainer m_robotContainer;     
-
-  @Override
-  public void robotInit() {
-    enableLiveWindowInTest(true);
-    m_robotContainer = new RobotContainer();
-
-    //CameraServer.startAutomaticCapture();
-
-    //processor = new Processor();
+    private Command m_autonomousCommand;
     
-    // Initialize here to retrieve the details regarding the gyroscope.
-    // Do not use to ensure that any changes to behavior of the subsystem are unobserved and do not
-    // impact the driving and autonomous of the robot.
+    private RobotContainer m_robotContainer;
 
-  }
+    private PowerDistribution m_PDH;
 
-  @Override
-  public void robotPeriodic() {
-    CommandScheduler.getInstance().run();
-  }
-
-  @Override
-  public void disabledInit() {}
-
-  @Override
-  public void disabledPeriodic() {}
-
-  @Override
-  public void disabledExit() {}
-
-  @Override
-  public void autonomousInit() {
-    m_autonomousCommand = m_robotContainer.drivetrain.getAutonomousCommand();
-
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.schedule();
-    }
-  }
-
-  @Override
-  public void autonomousPeriodic() {}
-
-  @Override
-  public void autonomousExit() { }
-
-  @Override
-  public void teleopInit() {
-    if (m_autonomousCommand != null) {
-      m_autonomousCommand.cancel();
+    @Override
+    public void robotInit() {
+        SignalLogger.enableAutoLogging(false);
+        m_robotContainer = new RobotContainer();
+        m_PDH = new PowerDistribution(1, ModuleType.kRev);
+        SmartDashboard.putData("PDH", m_PDH);
     }
 
-    (new DriveFieldRelative(m_robotContainer.drivetrain, m_robotContainer.DriveController)).schedule();
-  }
+    @Override
+    public void robotPeriodic() {
+        CommandScheduler.getInstance().run();
+    }
 
-  @Override
-  public void teleopPeriodic() {}
+    @Override
+    public void disabledInit() {
+        CommandScheduler.getInstance().cancelAll();
+    }
 
-  @Override
-  public void teleopExit() {}
+    @Override
+    public void disabledPeriodic() {}
 
-  @Override
-  public void testInit() {
-    CommandScheduler.getInstance().cancelAll();
-  }
+    @Override
+    public void disabledExit() {}
 
-  @Override
-  public void testPeriodic() {
-  }
+    @Override
+    public void autonomousInit() {
+        m_autonomousCommand = m_robotContainer.getAutonomousCommand();
+    
+        if (m_autonomousCommand != null) {
+            System.out.println("Auto loaded: " + m_autonomousCommand.getName());
+            CommandScheduler.getInstance().schedule(m_autonomousCommand);
+        }
+    }
 
-  @Override
-  public void testExit() {}
+    @Override
+    public void autonomousPeriodic() {}
 
+    @Override
+    public void autonomousExit() {}
+
+    @Override
+    @SuppressWarnings("removal")
+    public void teleopInit() {
+        if (m_autonomousCommand != null) {
+            m_autonomousCommand.cancel();
+            m_autonomousCommand = null;
+        }
+    }
+
+    @Override
+    public void teleopPeriodic() {}
+
+    @Override
+    public void teleopExit() {}
+
+    @Override
+    public void testInit() {
+        CommandScheduler.getInstance().cancelAll();
+    }
+
+    @Override
+    public void testPeriodic() {}
+
+    @Override
+    public void testExit() {}
 }

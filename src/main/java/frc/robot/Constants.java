@@ -1,7 +1,16 @@
 package frc.robot;
 
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.geometry.Translation2d;
-import frc.robot.Subsystems.swerveModule;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
+import frc.robot.Subsystems.SwerveModule;
 
 public class Constants {
 
@@ -24,58 +33,56 @@ public class Constants {
     public static double controllerDeadband = 0.15; 
 
     public interface Modules{
-            public static final double SpeedKP = 0.001, SpeedKI = 0, SpeedKD = 0.0005;
-            public static final double SteerKP = 1.5, SteerKI = 0, SteerKD = 0;
-        
-            public static final int FrontLeftDriveID   = 4, FrontLeftSteerID   = 5, FrontLeftEncoderID = 6;
-			public static final double FrontLeftEncoderOffset = -0.456;//-0.423340 rotations raw = 0.000000 rotations
-            // public static final double FrontLeftEncoderOffset = 0;
+        public static final double SpeedKP = 0.001, SpeedKI = 0, SpeedKD = 0.0005;
+        public static final double SteerKP = 1.5, SteerKI = 0, SteerKD = 0;
+    
+        public static final int FrontLeftDriveID   = 4, FrontLeftSteerID   = 5, FrontLeftEncoderID = 6;
+        public static final double FrontLeftEncoderOffset = -0.456;//-0.423340 rotations raw = 0.000000 rotations
+        // public static final double FrontLeftEncoderOffset = 0;
 
-            public static final int FrontRightDriveID   = 1, FrontRightSteerID   = 2, FrontRightEncoderID = 3;
-            public static final double FrontRightEncoderOffset = -0.347;//0.484131 rotations raw = -0.000244 rotations
-            // public static final double FrontRightEncoderOffset = 0;
+        public static final int FrontRightDriveID   = 1, FrontRightSteerID   = 2, FrontRightEncoderID = 3;
+        public static final double FrontRightEncoderOffset = -0.347;//0.484131 rotations raw = -0.000244 rotations
+        // public static final double FrontRightEncoderOffset = 0;
 
-            public static final int RearLeftDriveID   = 7, RearLeftSteerID   = 8, RearLeftEncoderID = 9;
-            public static final double RearLeftEncoderOffset = 0.386;//0.283691 rotations raw = -0.000244 rotations
-            // public static final double RearLeftEncoderOffset = 0;
+        public static final int RearLeftDriveID   = 7, RearLeftSteerID   = 8, RearLeftEncoderID = 9;
+        public static final double RearLeftEncoderOffset = 0.386;//0.283691 rotations raw = -0.000244 rotations
+        // public static final double RearLeftEncoderOffset = 0;
 
-            public static final int RearRightDriveID   = 10, RearRightSteerID   = 11, RearRightEncoderID = 12;
-            public static final double RearRightEncoderOffset = 0.131;//0.448730 rotations raw = 0.000244 rotations
-            // public static final double RearRightEncoderOffset = 0;
+        public static final int RearRightDriveID   = 10, RearRightSteerID   = 11, RearRightEncoderID = 12;
+        public static final double RearRightEncoderOffset = 0.131;//0.448730 rotations raw = 0.000244 rotations
+        // public static final double RearRightEncoderOffset = 0;
 
-        swerveModule[] moduleArray = new swerveModule[] {
-            new swerveModule(FrontRightDriveID,FrontRightSteerID,FrontRightEncoderID,FrontRightEncoderOffset),
-            new swerveModule(FrontLeftDriveID, FrontLeftSteerID, FrontLeftEncoderID, FrontLeftEncoderOffset),
-            new swerveModule(RearLeftDriveID, RearLeftSteerID, RearLeftEncoderID, RearLeftEncoderOffset),
-            new swerveModule(RearRightDriveID, RearRightSteerID, RearRightEncoderID, RearRightEncoderOffset)
+        SwerveModule[] moduleArray = new SwerveModule[] {
+            new SwerveModule(FrontRightDriveID,FrontRightSteerID,FrontRightEncoderID,FrontRightEncoderOffset),
+            new SwerveModule(FrontLeftDriveID, FrontLeftSteerID, FrontLeftEncoderID, FrontLeftEncoderOffset),
+            new SwerveModule(RearLeftDriveID, RearLeftSteerID, RearLeftEncoderID, RearLeftEncoderOffset),
+            new SwerveModule(RearRightDriveID, RearRightSteerID, RearRightEncoderID, RearRightEncoderOffset)
         };
         
     }
-                //TODO not really a todo, but i had to name it this way or java got mad at me
-    public interface Pconstants{ //TODO figure out the real values for this section 
-
-        public static final double IntakeSpeed = 0;
-        public static final double ShootSpeed = 0;
-        
-
-        public static final int AngMotorID = 16, ShootMotorID = 15, PingChannel = 0, EchoChannel = 1;
-
-        public static final double ControllerTolerance = 1;//degrees 
-        public static final double ControllerKP = 0.02, ControllerKI = 0, ControllerKD = 0;
-
-        //public static final double DistanceSensorThreshold = 0;
-
-        public static final double scoreAng = 25;
-        public static final double ExtendedAngle = 0.78;
-        public static final double retractedAngle = 0.95;
-        public static final double transportAngle = 0.9;
-        public static int angID = 13;
-        public static int intakeID = 14;
-        public static int algaeSensorPort = 0;
-
-    }
 
     public interface Drivetrain {
+        public static final double SpeedKP = 5, SpeedKI = 0, SpeedKD = 0;
+        public static final double SteerKP = 1.5, SteerKI = 0, SteerKD = 0;
+
+        public interface Odometry {
+            public static final double PositionStdDev = 0.1;
+            public static final double AngleStdDev = 0.05;
+        }
+
+        public static final String CameraName = "front";
+
+        public static final Transform3d RobotToCamera = new Transform3d(
+            new Translation3d(0.0889, -0.00635, 0.47625),
+            new Rotation3d(0, 0, 0)
+        );
+
+        public static final AprilTagFieldLayout FieldLayout =
+            AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+
+        public static final Matrix<N3, N1> SingleTagStdDevs = VecBuilder.fill(0.1, 0.1, 999999);
+        public static final Matrix<N3, N1> MultiTagStdDevs = VecBuilder.fill(0.05, 0.05, 999999);
+
         public static final double TranslationPow = 3;
         public static final double RotationPow = 3;
 
@@ -83,85 +90,9 @@ public class Constants {
         public static final double SlowFactorOffset = 1;
     }
 
-    public interface Shooter{
-
-        public static final int aID = 13,bID = 14;
-		public static final double MaxSpeed = 1.00;//percent
-        
-    }
-
-    public interface Climber{
-        public static final int MotorID = 19;
-        
-        public static final int CurrentLimit = 80;
-
-        public static final double ClimbSpeed = -1.0;
-        public static final double ReleaseSpeed = 1.0;
-        public static final double BrakeSpeed = 0.0;
-    }
-
-    public interface Elevator {
-
-        public interface Lift {
-            public static final int MotorID = 15;
-            public static final double kFastP = .08/2000;
-            public static final double kFastI = .065/2000;
-            public static final double kFastD = 0.0025/2000;
-            public static final double kSlowP = .16/2000;
-            public static final double kSlowI = 0.655/2000;
-            public static final double kSlowD = 0.003/2000;
-
-            public static final double IdlePosition = 0;
-            public static final double IntakePosition = 650;
-            public static final double L1PrepPosition = 2850;
-            public static final double A1PrepPosition = 2;
-            public static final double L2PrepPosition = 4850; // 7
-            public static final double A2PrepPosition = 0;
-            public static final double L3PrepPosition = 6850;
-            public static final double L4FastPrepPosition = 0;
-            public static final double L4PrepPosition = 7130;
-            public static final double L4ReleasePosition = 0;
-            
-        }
-
-
-        public static interface Arm {
-            public static final int MotorID = 18;
-            public static final double kP = 1.75*2/3;
-            public static final double kI = 0;
-            public static final double kD = 0.0;
-
-            public static final double IdlePosition = 0.74;
-            public static final double IntakePosition = 0.74;
-            public static final double L1PrepPosition = 0.4;
-            public static final double A1PrepPosition = 0.7;
-            public static final double L2PrepPosition = .42; // .4
-            public static final double A2PrepPosition = 0;
-            public static final double L3PrepPosition = 0.43;
-            public static final double L4PrepPosition = .65;
-
-            public static final double A1ReleasePosition = 0;
-            public static final double A2ReleasePosition = 0;
-        }
-
-        public interface  Intake{
-            public static final int MotorID = 17;
-            public static final double IntakeSpeed = 0.3;
-            public static final double IntakeTimeout = 5;
-            public static final double HoldSpeed = 0;
-            public static final int sensorPort = 1;
-            public static final double ReleaseSpeed = -0.3;
-            public static final double SlowReleaseSpeed = -0.1;
-            public static final double AlgaeSpeed = 0;
-            public static final double ReleaseTime = 1;
-        }
-
-    
-    }
-
     public interface Motion {
-            public static final double translationKP = 0.02, translationKI = 0, translationKD = 0;
-            public static final double rotationKP = 0.02, rotationKI = 0, rotationKD = 0;
+        public static final double translationKP = 0.02, translationKI = 0, translationKD = 0;
+        public static final double rotationKP = 0.02, rotationKI = 0, rotationKD = 0;
     }
 
 }
