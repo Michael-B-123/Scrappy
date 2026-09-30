@@ -53,10 +53,10 @@ public class Constants {
         // public static final double RearRightEncoderOffset = 0;
 
         SwerveModule[] moduleArray = new SwerveModule[] {
-            new SwerveModule(FrontRightDriveID,FrontRightSteerID,FrontRightEncoderID,FrontRightEncoderOffset),
-            new SwerveModule(FrontLeftDriveID, FrontLeftSteerID, FrontLeftEncoderID, FrontLeftEncoderOffset),
-            new SwerveModule(RearLeftDriveID, RearLeftSteerID, RearLeftEncoderID, RearLeftEncoderOffset),
-            new SwerveModule(RearRightDriveID, RearRightSteerID, RearRightEncoderID, RearRightEncoderOffset)
+            new SwerveModule(FrontRightDriveID, FrontRightSteerID, FrontRightEncoderID),
+            new SwerveModule(FrontLeftDriveID, FrontLeftSteerID, FrontLeftEncoderID),
+            new SwerveModule(RearLeftDriveID, RearLeftSteerID, RearLeftEncoderID),
+            new SwerveModule(RearRightDriveID, RearRightSteerID, RearRightEncoderID)
         };
         
     }

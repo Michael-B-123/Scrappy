@@ -89,7 +89,7 @@ public class Drivetrain extends SubsystemBase {
             field.getObject("path").setPoses(poses);
         });
 
-        // SmartDashboard.putData(calibrate());
+        SmartDashboard.putData(calibrate());
         SmartDashboard.putData(this);
 
         RobotConfig config = null;
@@ -226,15 +226,15 @@ public class Drivetrain extends SubsystemBase {
         }
     }
     
-    // public Command calibrate() {
-    //    return parallel(
-    //        runOnce(() -> {System.out.println("Swerve calibration triggered");}),
-    //        modules[0].calibrate(),
-    //        modules[1].calibrate(),
-    //        modules[2].calibrate(),
-    //        modules[3].calibrate()
-    //    ).ignoringDisable(true).withName("Calibrating");
-    //}
+    public Command calibrate() {
+       return parallel(
+           runOnce(() -> {System.out.println("Swerve calibration triggered");}),
+           modules[0].calibrate(),
+           modules[1].calibrate(),
+           modules[2].calibrate(),
+           modules[3].calibrate()
+       ).ignoringDisable(true).withName("Calibrating");
+    }
 
     public void drive(ChassisSpeeds chassisSpeeds) {
         setModuleTargetStates(chassisSpeeds, new Translation2d());
