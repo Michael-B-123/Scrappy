@@ -27,20 +27,20 @@ public class RobotContainer {
 
     public final Drivetrain drivetrain = new Drivetrain(Constants.Modules.moduleArray, driveController, Constants.Drivetrain.CameraName);
     
-    private final SendableChooser<Command> autoChooser;
+    // private final SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
         configureBindings();
 
-        autoChooser = AutoBuilder.buildAutoChooser("Nothing");
-        SmartDashboard.putData("Auto chooser", autoChooser);
+        // autoChooser = AutoBuilder.buildAutoChooser("Nothing");
+        // SmartDashboard.putData("Auto chooser", autoChooser);
 
         SmartDashboard.putData(CommandScheduler.getInstance());
     }
 
     private void configureBindings() {}
 
-    public Command getAutonomousCommand() {
-        return autoChooser.getSelected();
-    }
+    // public Command getAutonomousCommand() {
+    //     return autoChooser.getSelected();
+    // }
 }

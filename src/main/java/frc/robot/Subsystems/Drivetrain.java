@@ -79,46 +79,46 @@ public class Drivetrain extends SubsystemBase {
 
         SmartDashboard.putData("Field", field);
 
-        // Logging callback for target robot pose
-        PathPlannerLogging.setLogTargetPoseCallback((pose) -> {
-            field.getObject("target pose").setPose(pose);
-        });
+        // // Logging callback for target robot pose
+        // PathPlannerLogging.setLogTargetPoseCallback((pose) -> {
+        //     field.getObject("target pose").setPose(pose);
+        // });
 
-        // Logging callback for the active path, this is sent as a list of poses
-        PathPlannerLogging.setLogActivePathCallback((poses) -> {
-            field.getObject("path").setPoses(poses);
-        });
+        // // Logging callback for the active path, this is sent as a list of poses
+        // PathPlannerLogging.setLogActivePathCallback((poses) -> {
+        //     field.getObject("path").setPoses(poses);
+        // });
 
         SmartDashboard.putData(calibrate());
         SmartDashboard.putData(this);
 
-        RobotConfig config = null;
-        try {
-            config = RobotConfig.fromGUISettings();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // RobotConfig config = null;
+        // try {
+        //     config = RobotConfig.fromGUISettings();
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
 
-        AutoBuilder.configure(
-            this::getPose,
-            this::resetPose,
-            this::getChasisSpeed,
-            (speeds, feedforwards) -> drive(speeds),
+        // AutoBuilder.configure(
+        //     this::getPose,
+        //     this::resetPose,
+        //     this::getChasisSpeed,
+        //     (speeds, feedforwards) -> drive(speeds),
 
-            new PPHolonomicDriveController(
-                new PIDConstants(Constants.Drivetrain.SpeedKP, Constants.Drivetrain.SpeedKI, Constants.Drivetrain.SpeedKD),
-                new PIDConstants(Constants.Drivetrain.SteerKP, Constants.Drivetrain.SteerKI, Constants.Drivetrain.SteerKD)
-            ),
-            config,
-            () -> {
-              var alliance = DriverStation.getAlliance();
-              if (!alliance.isPresent()) {
-                return false;
-              }
-              return alliance.get() == DriverStation.Alliance.Red;
-            },
-            this
-        );
+        //     new PPHolonomicDriveController(
+        //         new PIDConstants(Constants.Drivetrain.SpeedKP, Constants.Drivetrain.SpeedKI, Constants.Drivetrain.SpeedKD),
+        //         new PIDConstants(Constants.Drivetrain.SteerKP, Constants.Drivetrain.SteerKI, Constants.Drivetrain.SteerKD)
+        //     ),
+        //     config,
+        //     () -> {
+        //       var alliance = DriverStation.getAlliance();
+        //       if (!alliance.isPresent()) {
+        //         return false;
+        //       }
+        //       return alliance.get() == DriverStation.Alliance.Red;
+        //     },
+        //     this
+        // );
     }
 
     @Override
