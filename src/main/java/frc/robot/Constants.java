@@ -17,18 +17,19 @@ public class Constants {
     public static final double Delta = 1e-2;
     
     public static final Translation2d[] moduleLocations = {
-        new Translation2d(0.1905,0.1905),  //front right ++
-        new Translation2d(-0.1905,0.1905), //front left  -+
-        new Translation2d(-0.1905,-0.1905),  //rear left   --
-        new Translation2d(0.1905,-0.1905)  //rear right  +-
+        new Translation2d(0.1905, -0.1905),  //front right +-
+        new Translation2d(0.1905, 0.1905), //front left  ++
+        new Translation2d(-0.1905, 0.1905),  //rear left   -+
+        new Translation2d(-0.1905, -0.1905)  //rear right  --
     };
+
     //velocity constranints for swerve desaturate
-    public static final double DriveBaseRadius = 0.134704;
+    public static final double DriveBaseRadius = moduleLocations[1].getNorm();
     public static final double attainableMaxModuleSpeedMPS = 4.572;
     public static final double attainableMaxTranslationalSpeedMPS = attainableMaxModuleSpeedMPS;
     public static final double attainableMaxRotationalVelocityRPS = attainableMaxModuleSpeedMPS/DriveBaseRadius;
 
-    public static final int PigeonID = 22;   
+    public static final int PigeonID = 13;   
 
     public static double controllerDeadband = 0.15; 
 

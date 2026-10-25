@@ -55,6 +55,7 @@ public class SwerveModule extends SubsystemBase{
         //drive motor 
         driveMotor = new SparkMax(driveMotorID, MotorType.kBrushless);
         SparkMaxConfig driveConfig = new SparkMaxConfig();
+        driveConfig.inverted(true);
         driveConfig.smartCurrentLimit(40);
         driveConfig.idleMode(IdleMode.kBrake);
         driveMotor.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
