@@ -18,14 +18,14 @@ public class Robot extends TimedRobot {
     
     private RobotContainer m_robotContainer;
 
-    private PowerDistribution m_PDH;
+    // private PowerDistribution m_PDH;
 
     @Override
     public void robotInit() {
         SignalLogger.enableAutoLogging(false);
         m_robotContainer = new RobotContainer();
-        m_PDH = new PowerDistribution(1, ModuleType.kRev);
-        SmartDashboard.putData("PDH", m_PDH);
+        // m_PDH = new PowerDistribution(1, ModuleType.kRev);
+        // SmartDashboard.putData("PDH", m_PDH);
     }
 
     @Override
