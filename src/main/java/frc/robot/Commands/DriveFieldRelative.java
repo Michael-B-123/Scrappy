@@ -55,7 +55,7 @@ public class DriveFieldRelative extends Command {
         new ChassisSpeeds(
             -(y * Constants.attainableMaxTranslationalSpeedMPS) / slowModeFactor, 
             -(x * Constants.attainableMaxTranslationalSpeedMPS) / slowModeFactor, 
-            -(theta * Constants.attainableMaxRotationalVelocityRPS) / slowModeFactor
+            (theta * Constants.attainableMaxRotationalVelocityRPS) / slowModeFactor
         ));
     }
 }
