@@ -25,7 +25,7 @@ public class RobotContainer {
     private final Trigger drivekLeftBumper = driveController.leftBumper();
     private final Trigger drivekRightBumper = driveController.rightBumper();
 
-    public final Drivetrain drivetrain = new Drivetrain(Constants.Modules.moduleArray, driveController, Constants.Drivetrain.CameraName);
+    public final Drivetrain drivetrain = new Drivetrain(Constants.Modules.moduleArray, driveController);
     
     // private final SendableChooser<Command> autoChooser;
 

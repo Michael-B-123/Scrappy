@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import static edu.wpi.first.wpilibj2.command.Commands.parallel;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
@@ -52,19 +53,25 @@ public class Drivetrain extends SubsystemBase {
     SlewRateLimiter translationYLimiter = new SlewRateLimiter(translationMaxAccelerationMetersPerSecondSquared);
     SlewRateLimiter rotationLimiter = new SlewRateLimiter(rotationMaxAccelerationRadiansPerSecondSquared);
 
-    private final PhotonCamera camera;
-    private final PhotonPoseEstimator photonEstimator = new PhotonPoseEstimator(Constants.Drivetrain.FieldLayout, Constants.Drivetrain.RobotToCamera);
     private final SwerveDrivePoseEstimator poseEstimator;
     private boolean hasRecievedVisionMeasurement;
     private final Field2d field = new Field2d();
+    private record cameraSetup(PhotonCamera camera, PhotonPoseEstimator estimator) {}
+    private final List<cameraSetup> cameras= new ArrayList<>();
     
-    public Drivetrain(SwerveModule[] modules, CommandXboxController controller, String cameraName) {
+    public Drivetrain(SwerveModule[] modules, CommandXboxController controller) {
         IMU = new Pigeon2(Constants.PigeonID, new CANBus("*"));
         this.modules = modules;
         kinematics = new SwerveDriveKinematics(Constants.moduleLocations);
         setDefaultCommand(new DriveFieldRelative(this, controller));
 
-        camera = new PhotonCamera(cameraName);
+        for (Constants.Drivetrain.Camera cameraConfig : Constants.Drivetrain.Cameras) {
+            cameras.add(new cameraSetup(
+                new PhotonCamera(cameraConfig.name()), 
+                new PhotonPoseEstimator(Constants.Drivetrain.FieldLayout, cameraConfig.transform()))
+            );
+        }
+
         poseEstimator = new SwerveDrivePoseEstimator(
             kinematics,
             getGyroscopeRotation(),
@@ -79,88 +86,98 @@ public class Drivetrain extends SubsystemBase {
 
         SmartDashboard.putData("Field", field);
 
-        // // Logging callback for target robot pose
-        // PathPlannerLogging.setLogTargetPoseCallback((pose) -> {
-        //     field.getObject("target pose").setPose(pose);
-        // });
+        // Logging callback for target robot pose
+        PathPlannerLogging.setLogTargetPoseCallback((pose) -> {
+            field.getObject("target pose").setPose(pose);
+        });
 
-        // // Logging callback for the active path, this is sent as a list of poses
-        // PathPlannerLogging.setLogActivePathCallback((poses) -> {
-        //     field.getObject("path").setPoses(poses);
-        // });
+        // Logging callback for the active path, this is sent as a list of poses
+        PathPlannerLogging.setLogActivePathCallback((poses) -> {
+            field.getObject("path").setPoses(poses);
+        });
 
         SmartDashboard.putData(calibrate());
         SmartDashboard.putData(this);
 
-        // RobotConfig config = null;
-        // try {
-        //     config = RobotConfig.fromGUISettings();
-        // } catch (Exception e) {
-        //     e.printStackTrace();
-        // }
+        RobotConfig config = null;
+        try {
+            config = RobotConfig.fromGUISettings();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-        // AutoBuilder.configure(
-        //     this::getPose,
-        //     this::resetPose,
-        //     this::getChasisSpeed,
-        //     (speeds, feedforwards) -> drive(speeds),
+        AutoBuilder.configure(
+            this::getPose,
+            this::resetPose,
+            this::getChasisSpeed,
+            (speeds, feedforwards) -> drive(speeds),
 
-        //     new PPHolonomicDriveController(
-        //         new PIDConstants(Constants.Drivetrain.SpeedKP, Constants.Drivetrain.SpeedKI, Constants.Drivetrain.SpeedKD),
-        //         new PIDConstants(Constants.Drivetrain.SteerKP, Constants.Drivetrain.SteerKI, Constants.Drivetrain.SteerKD)
-        //     ),
-        //     config,
-        //     () -> {
-        //       var alliance = DriverStation.getAlliance();
-        //       if (!alliance.isPresent()) {
-        //         return false;
-        //       }
-        //       return alliance.get() == DriverStation.Alliance.Red;
-        //     },
-        //     this
-        // );
+            new PPHolonomicDriveController(
+                new PIDConstants(Constants.Drivetrain.SpeedKP, Constants.Drivetrain.SpeedKI, Constants.Drivetrain.SpeedKD),
+                new PIDConstants(Constants.Drivetrain.SteerKP, Constants.Drivetrain.SteerKI, Constants.Drivetrain.SteerKD)
+            ),
+            config,
+            () -> {
+              var alliance = DriverStation.getAlliance();
+              if (!alliance.isPresent()) {
+                return false;
+              }
+              return alliance.get() == DriverStation.Alliance.Red;
+            },
+            this
+        );
     }
 
     @Override
     public void periodic() {
-        for (PhotonPipelineResult result : camera.getAllUnreadResults()) {
-            var visionEstimate = photonEstimator.estimateCoprocMultiTagPose(result);
-            if (visionEstimate.isEmpty()) {
-                visionEstimate = photonEstimator.estimateLowestAmbiguityPose(result);
+        for (cameraSetup camSetup : cameras) {
+            PhotonCamera camera = camSetup.camera();
+            PhotonPoseEstimator photonEstimator = camSetup.estimator();
+            
+            for (PhotonPipelineResult result : camera.getAllUnreadResults()) {
+                var visionEstimate = photonEstimator.estimateCoprocMultiTagPose(result);
+                if (visionEstimate.isEmpty()) {
+                    visionEstimate = photonEstimator.estimateLowestAmbiguityPose(result);
+                }
+
+                visionEstimate.ifPresent(e -> {
+                    var targets = e.targetsUsed;
+                    Pose2d estPose = e.estimatedPose.toPose2d();
+                    field.getObject("vision pose").setPose(estPose);
+                    
+                    if ((targets.size() == 1 && targets.get(0).getPoseAmbiguity() > 0.2) ||
+                            targets.size() == 0) {
+                        return;
+                    }
+
+                    if (Math.abs(e.estimatedPose.getZ()) > 0.5) {
+                        return;
+                    }
+
+                    if (estPose.getTranslation().getDistance(poseEstimator.getEstimatedPosition().getTranslation()) > 5 && 
+                        hasRecievedVisionMeasurement) {
+                        return;
+                    }
+
+                    if (estPose.getX() < 0 || estPose.getX() > Constants.Drivetrain.FieldLayout.getFieldLength() ||
+                        estPose.getY() < 0 || estPose.getY() > Constants.Drivetrain.FieldLayout.getFieldWidth()) {
+                        return;
+                    }
+
+                    if (!hasRecievedVisionMeasurement) {
+                        poseEstimator.resetPose(estPose);
+                        hasRecievedVisionMeasurement = true;
+                        return;
+                    }
+
+                    Matrix<N3, N1> stdDevs = getStdDevs(e, targets);
+                    poseEstimator.addVisionMeasurement(estPose, e.timestampSeconds, stdDevs);
+                    field.getObject("good vision pose").setPose(estPose);
+
+                    double lag = Timer.getFPGATimestamp() - e.timestampSeconds;
+                    SmartDashboard.putNumber("Vision/MeasurementLag_s", lag);
+                });            
             }
-
-            visionEstimate.ifPresent(e -> {
-                var targets = e.targetsUsed;
-                Pose2d estPose = e.estimatedPose.toPose2d();
-                field.getObject("vision pose").setPose(estPose);
-                
-                if ((targets.size() == 1 && targets.get(0).getPoseAmbiguity() > 0.2) ||
-                        targets.size() == 0) {
-                    return;
-                }
-
-                if (Math.abs(e.estimatedPose.getZ()) > 0.5) {
-                    return;
-                }
-
-                if (estPose.getTranslation().getDistance(poseEstimator.getEstimatedPosition().getTranslation()) > 0.5 && 
-                    hasRecievedVisionMeasurement) {
-                    return;
-                }
-
-                if (!hasRecievedVisionMeasurement) {
-                    poseEstimator.resetPose(estPose);
-                    hasRecievedVisionMeasurement = true;
-                    return;
-                }
-
-                Matrix<N3, N1> stdDevs = getStdDevs(e, targets);
-                poseEstimator.addVisionMeasurement(estPose, e.timestampSeconds, stdDevs);
-                field.getObject("good vision pose").setPose(estPose);
-
-                double lag = Timer.getFPGATimestamp() - e.timestampSeconds;
-                SmartDashboard.putNumber("Vision/MeasurementLag_s", lag);
-            });            
         }
 
         poseEstimator.update(getGyroscopeRotation(), getModulePositions());
@@ -174,7 +191,7 @@ public class Drivetrain extends SubsystemBase {
         double avgDist = 0;
 
         for (var target : targets) {
-            var tagPose = photonEstimator.getFieldTags().getTagPose(target.getFiducialId());
+            var tagPose = Constants.Drivetrain.FieldLayout.getTagPose(target.getFiducialId());
             if (tagPose.isEmpty()) {
                 continue;
             }
@@ -227,13 +244,13 @@ public class Drivetrain extends SubsystemBase {
     }
     
     public Command calibrate() {
-       return parallel(
-           runOnce(() -> {System.out.println("Swerve calibration triggered");}),
-           modules[0].calibrate(),
-           modules[1].calibrate(),
-           modules[2].calibrate(),
-           modules[3].calibrate()
-       ).ignoringDisable(true).withName("Calibrating");
+        return parallel(
+            runOnce(() -> {System.out.println("Swerve calibration triggered");}),
+            modules[0].calibrate(),
+            modules[1].calibrate(),
+            modules[2].calibrate(),
+            modules[3].calibrate()
+        ).ignoringDisable(true).withName("Calibrating");
     }
 
     public void drive(ChassisSpeeds chassisSpeeds) {

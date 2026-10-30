@@ -3,6 +3,9 @@ package frc.robot;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+
+import java.util.List;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
@@ -71,12 +74,23 @@ public class Constants {
             public static final double AngleStdDev = 0.05;
         }
 
-        public static final String CameraName = "front";
+        public record Camera(String name, Transform3d transform) {}
 
-        public static final Transform3d RobotToCamera = new Transform3d(
-            new Translation3d(0.0889, -0.00635, 0.47625),
-            new Rotation3d(0, 0, 0)
-        );
+        public static final List<Camera> Cameras = List.of(
+            new Camera("Front", new Transform3d(
+                new Translation3d(0.3175, 0, 0.23495), // 12.5in forward, centered lr, 9.25in off the ground
+                new Rotation3d(0, 0, 0)) // centered
+            ),
+            new Camera("Left", new Transform3d(
+                new Translation3d(0.1524, 0.1778, 0.22225), //6in forward, 7in to the left, 8.75in off the ground
+                new Rotation3d(0, 0.610865, 0.785398)) //no roll, tilted 35 degrees back, 45 degees out to the left
+            ),
+            new Camera("Right", new Transform3d(
+                new Translation3d(0.1524, -0.1778, 0.22225), //6in forward, 7in to the right, 8.75in off the ground
+                new Rotation3d(0, 0.610865, -0.785398)) //no roll, tilted 35 degrees back, 45 degees out to the right
+            )
+        ); 
+
 
         public static final AprilTagFieldLayout FieldLayout =
             AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
