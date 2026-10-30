@@ -2,6 +2,7 @@ package frc.robot.Subsystems;
 
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkAbsoluteEncoder;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
@@ -27,12 +28,11 @@ public class SwerveModule extends SubsystemBase{
     //drive 
     SparkMax driveMotor;
     int driveMotorID;
-    SparkAbsoluteEncoder driveMotorEncoder;
+    RelativeEncoder driveMotorEncoder;
     SparkClosedLoopController  driveController;
 
     //steer
     SparkMax steerMotor;
-    SparkAbsoluteEncoder steerMotorEncoder;
     PIDController steerController;
 
     //module encoder 
@@ -61,7 +61,7 @@ public class SwerveModule extends SubsystemBase{
         driveMotor.configure(driveConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
         //drive encoder
-        driveMotorEncoder = driveMotor.getAbsoluteEncoder();
+        driveMotorEncoder = driveMotor.getEncoder();
 
         //steer motor
         steerMotor = new SparkMax(steerMotorID, MotorType.kBrushless);
