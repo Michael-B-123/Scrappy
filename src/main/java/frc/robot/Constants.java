@@ -1,11 +1,14 @@
 package frc.robot;
 
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 
 import java.util.List;
 
+import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
@@ -92,8 +95,21 @@ public class Constants {
         ); 
 
 
-        public static final AprilTagFieldLayout FieldLayout =
-            AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+
+        //aim at tag override
+        List<AprilTag> Tags = List.of(
+            new AprilTag(6, new Pose3d(
+                new Translation3d(5, 5, 0.75),
+                new Rotation3d(0, 0, Rotation2d.fromDegrees(180).getRadians())
+            ))
+        );
+        public static final AprilTagFieldLayout FieldLayout = new AprilTagFieldLayout(
+            Tags,10,10
+        );
+
+        //normal
+        // public static final AprilTagFieldLayout FieldLayout =
+        //     AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
 
         public static final Matrix<N3, N1> SingleTagStdDevs = VecBuilder.fill(0.1, 0.1, 999999);
         public static final Matrix<N3, N1> MultiTagStdDevs = VecBuilder.fill(0.05, 0.05, 999999);

@@ -5,10 +5,12 @@ import com.ctre.phoenix6.hardware.Pigeon2;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
@@ -22,6 +24,8 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+
 import static edu.wpi.first.wpilibj2.command.Commands.parallel;
 
 import java.util.List;
@@ -52,6 +56,9 @@ public class Drivetrain extends SubsystemBase {
     SlewRateLimiter translationXLimiter = new SlewRateLimiter(translationMaxAccelerationMetersPerSecondSquared);
     SlewRateLimiter translationYLimiter = new SlewRateLimiter(translationMaxAccelerationMetersPerSecondSquared);
     SlewRateLimiter rotationLimiter = new SlewRateLimiter(rotationMaxAccelerationRadiansPerSecondSquared);
+    private final PIDController visionForwardBackController = new PIDController(2, 0, 0);
+    private final PIDController visionSidewaysController = new PIDController(2, 0, 0);
+    private final PIDController visionRotationsController = new PIDController(1, 0, 0);
 
     private final SwerveDrivePoseEstimator poseEstimator;
     private boolean hasRecievedVisionMeasurement;
@@ -126,6 +133,33 @@ public class Drivetrain extends SubsystemBase {
             },
             this
         );
+    }
+
+    public Command aimAtTag(int tagId, Translation2d offset, Rotation2d theta) {
+        var tag = Constants.Drivetrain.FieldLayout.getTagPose(tagId);
+        return tag.map(t -> {
+            var tagPose2d = t.toPose2d();
+            var tagToTarget = new Transform2d(offset.unaryMinus(), theta);
+            var targetPose = tagPose2d.transformBy(tagToTarget);
+
+            SmartDashboard.putNumber("TX", targetPose.getX());
+            SmartDashboard.putNumber("TY", targetPose.getY());
+            SmartDashboard.putNumber("TT", targetPose.getRotation().getDegrees());
+
+            return run(()-> {
+                var robotPose = getPose();
+                var forwardVelocity = visionForwardBackController.calculate(robotPose.getX(), targetPose.getX());
+                var sidewaysVelocity = visionSidewaysController.calculate(robotPose.getY(), targetPose.getY());
+                var angularVelcoity = visionRotationsController.calculate(robotPose.getRotation().getRotations(), targetPose.getRotation().getRotations());
+
+                var speeds = new ChassisSpeeds(forwardVelocity, sidewaysVelocity, angularVelcoity);
+
+                drive(speeds);
+                SmartDashboard.putNumber("F", forwardVelocity);
+                SmartDashboard.putNumber("S", sidewaysVelocity);
+                SmartDashboard.putNumber("A", angularVelcoity);
+            });
+        }).orElse(Commands.none());
     }
 
     @Override

@@ -12,6 +12,7 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -89,7 +90,8 @@ public class SwerveModule extends SubsystemBase{
         targetState.optimize(Rotation2d.fromRotations(currentAngle));
         steerMotor.set(-steerController.calculate(currentAngle, targetState.angle.getRotations()));
         targetState.speedMetersPerSecond *= targetState.angle.minus(Rotation2d.fromRotations(currentAngle)).getCos();
-        driveMotor.set(targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS); 
+        var clampedSpeed = MathUtil.clamp(targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS, -1, 1);
+        driveMotor.set(clampedSpeed); 
     }
 
     public Command calibrate() {
