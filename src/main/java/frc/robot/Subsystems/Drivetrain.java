@@ -56,9 +56,9 @@ public class Drivetrain extends SubsystemBase {
     SlewRateLimiter translationXLimiter = new SlewRateLimiter(translationMaxAccelerationMetersPerSecondSquared);
     SlewRateLimiter translationYLimiter = new SlewRateLimiter(translationMaxAccelerationMetersPerSecondSquared);
     SlewRateLimiter rotationLimiter = new SlewRateLimiter(rotationMaxAccelerationRadiansPerSecondSquared);
-    private final PIDController visionForwardBackController = new PIDController(2, 0, 0);
-    private final PIDController visionSidewaysController = new PIDController(2, 0, 0);
-    private final PIDController visionRotationsController = new PIDController(1, 0, 0);
+    private final PIDController visionForwardBackController = new PIDController(1.5, 0, 0);
+    private final PIDController visionSidewaysController = new PIDController(1.5, 0, 0);
+    private final PIDController visionRotationsController = new PIDController(1.5, 0, 0);
 
     private final SwerveDrivePoseEstimator poseEstimator;
     private boolean hasRecievedVisionMeasurement;
@@ -70,6 +70,7 @@ public class Drivetrain extends SubsystemBase {
         IMU = new Pigeon2(Constants.PigeonID, new CANBus("*"));
         this.modules = modules;
         kinematics = new SwerveDriveKinematics(Constants.moduleLocations);
+        visionRotationsController.enableContinuousInput(-Math.PI, Math.PI);
         setDefaultCommand(new DriveFieldRelative(this, controller));
 
         for (Constants.Drivetrain.Camera cameraConfig : Constants.Drivetrain.Cameras) {
@@ -149,8 +150,11 @@ public class Drivetrain extends SubsystemBase {
             return run(()-> {
                 var robotPose = getPose();
                 var forwardVelocity = visionForwardBackController.calculate(robotPose.getX(), targetPose.getX());
+                if (Math.abs(forwardVelocity) < Constants.Drivetrain.autoAimDeadband) forwardVelocity = 0;
                 var sidewaysVelocity = visionSidewaysController.calculate(robotPose.getY(), targetPose.getY());
-                var angularVelcoity = visionRotationsController.calculate(robotPose.getRotation().getRotations(), targetPose.getRotation().getRotations());
+                if (Math.abs(sidewaysVelocity) < Constants.Drivetrain.autoAimDeadband) sidewaysVelocity = 0;
+                var angularVelcoity = -visionRotationsController.calculate(robotPose.getRotation().getRotations(), targetPose.getRotation().getRotations());
+                if (Math.abs(angularVelcoity) < Constants.Drivetrain.autoAimDeadband) angularVelcoity = 0;
 
                 var speeds = new ChassisSpeeds(forwardVelocity, sidewaysVelocity, angularVelcoity);
 

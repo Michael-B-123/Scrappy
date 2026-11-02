@@ -86,20 +86,22 @@ public class Constants {
             ),
             new Camera("Left", new Transform3d(
                 new Translation3d(0.1524, 0.1778, 0.22225), //6in forward, 7in to the left, 8.75in off the ground
-                new Rotation3d(0, 0.610865, 0.785398)) //no roll, tilted 35 degrees back, 45 degees out to the left
+                new Rotation3d(0, -0.610865, 0.785398)) //no roll, tilted 35 degrees back, 45 degees out to the left
             ),
             new Camera("Right", new Transform3d(
                 new Translation3d(0.1524, -0.1778, 0.22225), //6in forward, 7in to the right, 8.75in off the ground
-                new Rotation3d(0, 0.610865, -0.785398)) //no roll, tilted 35 degrees back, 45 degees out to the right
+                new Rotation3d(0, -0.610865, -0.785398)) //no roll, tilted 35 degrees back, 45 degees out to the right
             )
         ); 
 
 
+        //aim at tag smoother
+        public static final double autoAimDeadband = 0.1;
 
         //aim at tag override
         List<AprilTag> Tags = List.of(
             new AprilTag(6, new Pose3d(
-                new Translation3d(5, 5, 0.75),
+                new Translation3d(5, 5, 0.3),
                 new Rotation3d(0, 0, Rotation2d.fromDegrees(180).getRadians())
             ))
         );
