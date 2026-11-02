@@ -153,7 +153,7 @@ public class Drivetrain extends SubsystemBase {
                 if (Math.abs(forwardVelocity) < Constants.Drivetrain.autoAimDeadband) forwardVelocity = 0;
                 var sidewaysVelocity = visionSidewaysController.calculate(robotPose.getY(), targetPose.getY());
                 if (Math.abs(sidewaysVelocity) < Constants.Drivetrain.autoAimDeadband) sidewaysVelocity = 0;
-                var angularVelcoity = -visionRotationsController.calculate(robotPose.getRotation().getRotations(), targetPose.getRotation().getRotations());
+                var angularVelcoity = -visionRotationsController.calculate(robotPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
                 if (Math.abs(angularVelcoity) < Constants.Drivetrain.autoAimDeadband) angularVelcoity = 0;
 
                 var speeds = new ChassisSpeeds(forwardVelocity, sidewaysVelocity, angularVelcoity);
