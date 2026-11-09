@@ -158,7 +158,7 @@ public class Drivetrain extends SubsystemBase {
 
                 var speeds = new ChassisSpeeds(forwardVelocity, sidewaysVelocity, angularVelcoity);
 
-                drive(speeds);
+                driveFieldRelative(speeds, robotPose.getRotation());
                 SmartDashboard.putNumber("F", forwardVelocity);
                 SmartDashboard.putNumber("S", sidewaysVelocity);
                 SmartDashboard.putNumber("A", angularVelcoity);
@@ -300,11 +300,15 @@ public class Drivetrain extends SubsystemBase {
     }
 
     public void driveFieldRelative(ChassisSpeeds chassisSpeeds) {
+        driveFieldRelative(chassisSpeeds, getGyroscopeRotation());
+    }
+
+    public void driveFieldRelative(ChassisSpeeds chassisSpeeds, Rotation2d heading) {
         chassisSpeeds.vxMetersPerSecond = translationXLimiter.calculate(chassisSpeeds.vxMetersPerSecond);
         chassisSpeeds.vyMetersPerSecond = translationYLimiter.calculate(chassisSpeeds.vyMetersPerSecond);
         chassisSpeeds.omegaRadiansPerSecond = rotationLimiter.calculate(chassisSpeeds.omegaRadiansPerSecond);
 
-        setModuleTargetStates(ChassisSpeeds.fromFieldRelativeSpeeds(chassisSpeeds, getGyroscopeRotation()));
+        setModuleTargetStates(ChassisSpeeds.fromFieldRelativeSpeeds(chassisSpeeds, heading));
     }
 
     public void setModuleTargetStates(ChassisSpeeds chassisSpeeds) {
