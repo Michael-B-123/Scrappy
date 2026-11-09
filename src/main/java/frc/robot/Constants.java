@@ -35,7 +35,10 @@ public class Constants {
     public static final double attainableMaxTranslationalSpeedMPS = attainableMaxModuleSpeedMPS;
     public static final double attainableMaxRotationalVelocityRPS = attainableMaxModuleSpeedMPS/DriveBaseRadius;
 
-    public static final int PigeonID = 13;   
+    public static final int PigeonID = 13;
+    public static final int CANRangeID = 14;
+    public static final double ProximityThreshold = 1;
+    public static final double ProximityHysteresis = 0.01;
 
     public static double controllerDeadband = 0.15; 
 

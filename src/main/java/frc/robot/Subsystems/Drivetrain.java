@@ -1,7 +1,10 @@
 package frc.robot.Subsystems;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.CANrangeConfiguration;
+import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.hardware.Pigeon2;
+import com.ctre.phoenix6.signals.UpdateModeValue;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -49,6 +52,7 @@ import com.pathplanner.lib.util.PathPlannerLogging;
 
 public class Drivetrain extends SubsystemBase {
     Pigeon2 IMU;
+    CANrange CANRange;
     public SwerveModule[] modules;
     SwerveDriveKinematics kinematics;
     double translationMaxAccelerationMetersPerSecondSquared = 25;
@@ -68,6 +72,14 @@ public class Drivetrain extends SubsystemBase {
     
     public Drivetrain(SwerveModule[] modules, CommandXboxController controller) {
         IMU = new Pigeon2(Constants.PigeonID, new CANBus("*"));
+        CANRange = new CANrange(Constants.CANRangeID, new CANBus("*"));
+        CANrangeConfiguration crConfig = new CANrangeConfiguration();
+        crConfig.ToFParams.UpdateMode = UpdateModeValue.LongRangeUserFreq;
+        crConfig.ToFParams.UpdateFrequency = 50;
+        crConfig.ProximityParams.MinSignalStrengthForValidMeasurement = 2500;
+        crConfig.ProximityParams.ProximityThreshold = Constants.ProximityThreshold;
+        crConfig.ProximityParams.ProximityHysteresis = Constants.ProximityHysteresis;
+        CANRange.getConfigurator().apply(crConfig);
         this.modules = modules;
         kinematics = new SwerveDriveKinematics(Constants.moduleLocations);
         visionRotationsController.enableContinuousInput(-Math.PI, Math.PI);
@@ -221,6 +233,9 @@ public class Drivetrain extends SubsystemBase {
         poseEstimator.update(getGyroscopeRotation(), getModulePositions());
 
         field.setRobotPose(poseEstimator.getEstimatedPosition());
+
+        SmartDashboard.putBoolean("CANRange proximity", CANRange.getIsDetected().getValue());
+        SmartDashboard.putNumber("CANRange distance", Math.round(CANRange.getDistance().getValueAsDouble() * 100.0) / 100.0);
     }
 
     private Matrix<N3, N1> getStdDevs(EstimatedRobotPose estimatedPose, List<PhotonTrackedTarget> targets) {
