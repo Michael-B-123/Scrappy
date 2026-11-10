@@ -1,5 +1,7 @@
 package frc.robot.Subsystems;
 
+import frc.robot.Utils;
+
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.CANrangeConfiguration;
 import com.ctre.phoenix6.hardware.CANrange;
@@ -66,12 +68,14 @@ public class Drivetrain extends SubsystemBase {
 
     private final SwerveDrivePoseEstimator poseEstimator;
     private boolean hasRecievedVisionMeasurement;
+    private boolean crashAvoidance;
     private final Field2d field = new Field2d();
     private record cameraSetup(PhotonCamera camera, PhotonPoseEstimator estimator) {}
     private final List<cameraSetup> cameras= new ArrayList<>();
     
     public Drivetrain(SwerveModule[] modules, CommandXboxController controller) {
         IMU = new Pigeon2(Constants.PigeonID, new CANBus("*"));
+
         CANRange = new CANrange(Constants.CANRangeID, new CANBus("*"));
         CANrangeConfiguration crConfig = new CANrangeConfiguration();
         crConfig.ToFParams.UpdateMode = UpdateModeValue.LongRangeUserFreq;
@@ -80,6 +84,7 @@ public class Drivetrain extends SubsystemBase {
         crConfig.ProximityParams.ProximityThreshold = Constants.ProximityThreshold;
         crConfig.ProximityParams.ProximityHysteresis = Constants.ProximityHysteresis;
         CANRange.getConfigurator().apply(crConfig);
+
         this.modules = modules;
         kinematics = new SwerveDriveKinematics(Constants.moduleLocations);
         visionRotationsController.enableContinuousInput(-Math.PI, Math.PI);
@@ -146,6 +151,8 @@ public class Drivetrain extends SubsystemBase {
             },
             this
         );
+
+        SmartDashboard.putBoolean("Crash avoidance", false);
     }
 
     public Command aimAtTag(int tagId, Translation2d offset, Rotation2d theta) {
@@ -234,8 +241,10 @@ public class Drivetrain extends SubsystemBase {
 
         field.setRobotPose(poseEstimator.getEstimatedPosition());
 
+        crashAvoidance = SmartDashboard.getBoolean("Crash avoidance", false);
         SmartDashboard.putBoolean("CANRange proximity", CANRange.getIsDetected().getValue());
-        SmartDashboard.putNumber("CANRange distance", Math.round(CANRange.getDistance().getValueAsDouble() * 100.0) / 100.0);
+        SmartDashboard.putNumber("CANRange distance", Utils.RoundByPlaces(CANRange.getDistance().getValueAsDouble(), 2));
+        SmartDashboard.putNumber("CANRange distance to center", Utils.RoundByPlaces((CANRange.getDistance().getValueAsDouble() + Constants.CANRangeToCenter), 2));
     }
 
     private Matrix<N3, N1> getStdDevs(EstimatedRobotPose estimatedPose, List<PhotonTrackedTarget> targets) {
@@ -271,6 +280,10 @@ public class Drivetrain extends SubsystemBase {
         }
         
         return estStdDevs;
+    }
+
+    public boolean getIsDetected() {
+        return CANRange.getIsDetected().getValue();
     }
 
 	public SwerveDriveKinematics getKinematics() {
@@ -318,12 +331,22 @@ public class Drivetrain extends SubsystemBase {
         driveFieldRelative(chassisSpeeds, getGyroscopeRotation());
     }
 
-    public void driveFieldRelative(ChassisSpeeds chassisSpeeds, Rotation2d heading) {
-        chassisSpeeds.vxMetersPerSecond = translationXLimiter.calculate(chassisSpeeds.vxMetersPerSecond);
-        chassisSpeeds.vyMetersPerSecond = translationYLimiter.calculate(chassisSpeeds.vyMetersPerSecond);
-        chassisSpeeds.omegaRadiansPerSecond = rotationLimiter.calculate(chassisSpeeds.omegaRadiansPerSecond);
+    public void driveFieldRelative(ChassisSpeeds fieldSpeeds, Rotation2d heading) {
+        double vx = translationXLimiter.calculate(fieldSpeeds.vxMetersPerSecond);
+        double vy = translationYLimiter.calculate(fieldSpeeds.vyMetersPerSecond);
+        double omega = rotationLimiter.calculate(fieldSpeeds.omegaRadiansPerSecond);
 
-        setModuleTargetStates(ChassisSpeeds.fromFieldRelativeSpeeds(chassisSpeeds, heading));
+        ChassisSpeeds robotRelative = ChassisSpeeds.fromFieldRelativeSpeeds(vx, vy, omega, heading);
+
+        if (crashAvoidance && getIsDetected() && robotRelative.vxMetersPerSecond > 0) {
+            robotRelative.vxMetersPerSecond = 0;
+
+            ChassisSpeeds fieldAfter = ChassisSpeeds.fromRobotRelativeSpeeds(robotRelative, heading);
+            translationXLimiter.reset(fieldAfter.vxMetersPerSecond);
+            translationYLimiter.reset(fieldAfter.vyMetersPerSecond);
+        }
+
+        setModuleTargetStates(robotRelative);
     }
 
     public void setModuleTargetStates(ChassisSpeeds chassisSpeeds) {

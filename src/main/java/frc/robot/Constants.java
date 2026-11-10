@@ -36,9 +36,11 @@ public class Constants {
     public static final double attainableMaxRotationalVelocityRPS = attainableMaxModuleSpeedMPS/DriveBaseRadius;
 
     public static final int PigeonID = 13;
+
     public static final int CANRangeID = 14;
-    public static final double ProximityThreshold = 1;
+    public static final double ProximityThreshold = 0.1;
     public static final double ProximityHysteresis = 0.01;
+    public static final double CANRangeToCenter = 0.25;
 
     public static double controllerDeadband = 0.15; 
 
@@ -91,7 +93,7 @@ public class Constants {
 
 
         //aim at tag smoother
-        public static final double autoAimDeadband = 0.1;
+        public static final double autoAimDeadband = 0.05;
 
         //aim at tag override
         List<AprilTag> Tags = List.of(
