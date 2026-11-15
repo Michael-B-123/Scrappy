@@ -38,7 +38,7 @@ public class Constants {
     public static final int PigeonID = 13;
 
     public static final int CANRangeID = 14;
-    public static final double ProximityThreshold = 0.1;
+    public static final double ProximityThreshold = 1.0;
     public static final double ProximityHysteresis = 0.01;
     public static final double CANRangeToCenter = 0.25;
 

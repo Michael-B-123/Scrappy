@@ -1,6 +1,7 @@
 package frc.robot.Commands;
 
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants;
@@ -35,6 +36,10 @@ public class DriveFieldRelative extends Command {
         }
 
         double x = controller.getLeftX(), y = controller.getLeftY(), theta = controller.getRightX();
+        SmartDashboard.putNumber("Raw Left X", x);
+        SmartDashboard.putNumber("Raw Left Y", y);
+        SmartDashboard.putNumber("Raw Right X(Theta)", theta);
+
         
         if (Math.hypot(x, y) < Constants.controllerDeadband) {
             x = 0;
@@ -51,11 +56,14 @@ public class DriveFieldRelative extends Command {
 
         double slowModeFactor = (controller.getLeftTriggerAxis() * Constants.Drivetrain.SlowFactor) + Constants.Drivetrain.SlowFactorOffset;
 
-        swerve.driveFieldRelative(
-        new ChassisSpeeds(
-            -(y * Constants.attainableMaxTranslationalSpeedMPS) / slowModeFactor, 
-            -(x * Constants.attainableMaxTranslationalSpeedMPS) / slowModeFactor, 
-            (theta * Constants.attainableMaxRotationalVelocityRPS) / slowModeFactor
-        ));
+        double vy = -(x * Constants.attainableMaxTranslationalSpeedMPS) / slowModeFactor;
+        double vx = -(y * Constants.attainableMaxTranslationalSpeedMPS) / slowModeFactor;
+        double omega = (theta * Constants.attainableMaxRotationalVelocityRPS) / slowModeFactor;
+
+        SmartDashboard.putNumber("vx", vx);
+        SmartDashboard.putNumber("vy", vy);
+        SmartDashboard.putNumber("omega", omega);
+
+        swerve.driveFieldRelative(new ChassisSpeeds(vx, vy, omega));
     }
 }

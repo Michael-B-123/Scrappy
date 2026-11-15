@@ -25,6 +25,7 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -34,6 +35,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import static edu.wpi.first.wpilibj2.command.Commands.parallel;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.ArrayList;
 
 import org.photonvision.EstimatedRobotPose;
@@ -290,8 +292,21 @@ public class Drivetrain extends SubsystemBase {
         return kinematics;
     }
 
+    public Rotation2d getFieldRotationTransform() {
+        Optional<Alliance> alliance = DriverStation.getAlliance();
+        boolean isRed = alliance.isPresent() && alliance.get() == Alliance.Red;
+        if (isRed) {
+            return Rotation2d.fromDegrees(180);
+        }
+        return new Rotation2d();
+    }
+
+    public Rotation2d getFieldRelativeRotation() {
+        return getGyroscopeRotation().rotateBy(getFieldRotationTransform());
+    }
+
     public Rotation2d getGyroscopeRotation() {
-        return Rotation2d.fromDegrees(IMU.getYaw().getValueAsDouble());
+        return IMU.getRotation2d();
     }
 
     public void resetGyro() {
