@@ -70,6 +70,7 @@ public class Drivetrain extends SubsystemBase {
 
     private final SwerveDrivePoseEstimator poseEstimator;
     private boolean hasRecievedVisionMeasurement;
+    private boolean headingInitialized;
     private boolean crashAvoidance;
     private final Field2d field = new Field2d();
     private record cameraSetup(PhotonCamera camera, PhotonPoseEstimator estimator) {}
@@ -108,8 +109,6 @@ public class Drivetrain extends SubsystemBase {
             // We calculate these upon update provide those real details 
             VecBuilder.fill(999999, 999999, 999999)
         );
-
-        hasRecievedVisionMeasurement = false;
 
         SmartDashboard.putData("Field", field);
 
@@ -240,6 +239,7 @@ public class Drivetrain extends SubsystemBase {
         }
 
         poseEstimator.update(getGyroscopeRotation(), getModulePositions());
+        setHeadingOffset();
 
         field.setRobotPose(poseEstimator.getEstimatedPosition());
 
@@ -247,6 +247,21 @@ public class Drivetrain extends SubsystemBase {
         SmartDashboard.putBoolean("CANRange proximity", CANRange.getIsDetected().getValue());
         SmartDashboard.putNumber("CANRange distance", Utils.RoundByPlaces(CANRange.getDistance().getValueAsDouble(), 2));
         SmartDashboard.putNumber("CANRange distance to center", Utils.RoundByPlaces((CANRange.getDistance().getValueAsDouble() + Constants.CANRangeToCenter), 2));
+    }
+
+    private void setHeadingOffset() {
+        if (!headingInitialized
+            && DriverStation.isDisabled()
+            && DriverStation.getAlliance().isPresent()
+            && !hasRecievedVisionMeasurement
+        ) {
+            poseEstimator.resetPosition(
+                getGyroscopeRotation(),
+                getModulePositions(),
+                new Pose2d(getPose().getTranslation(), getFieldRotationTransform())
+            );
+            headingInitialized = true;
+        }
     }
 
     private Matrix<N3, N1> getStdDevs(EstimatedRobotPose estimatedPose, List<PhotonTrackedTarget> targets) {
@@ -310,8 +325,9 @@ public class Drivetrain extends SubsystemBase {
     }
 
     public void resetGyro() {
+        Pose2d pose = getPose();
         IMU.reset();
-        poseEstimator.resetPosition(new Rotation2d(), getModulePositions(), getPose());
+        poseEstimator.resetPosition(new Rotation2d(), getModulePositions(), pose);
     }
 
     private Pose2d getPose() {
@@ -321,6 +337,7 @@ public class Drivetrain extends SubsystemBase {
     private void resetPose(Pose2d pose) {
         if (!hasRecievedVisionMeasurement) {
             poseEstimator.resetPose(pose);
+            headingInitialized = true;
         }
     }
     
