@@ -173,15 +173,15 @@ public class Drivetrain extends SubsystemBase {
                 if (Math.abs(forwardVelocity) < Constants.Drivetrain.autoAimDeadband) forwardVelocity = 0;
                 var sidewaysVelocity = visionSidewaysController.calculate(robotPose.getY(), targetPose.getY());
                 if (Math.abs(sidewaysVelocity) < Constants.Drivetrain.autoAimDeadband) sidewaysVelocity = 0;
-                var angularVelcoity = -visionRotationsController.calculate(robotPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
-                if (Math.abs(angularVelcoity) < Constants.Drivetrain.autoAimDeadband) angularVelcoity = 0;
+                var angularVelocity = visionRotationsController.calculate(robotPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
+                if (Math.abs(angularVelocity) < Constants.Drivetrain.autoAimDeadband) angularVelocity = 0;
 
-                var speeds = new ChassisSpeeds(forwardVelocity, sidewaysVelocity, angularVelcoity);
+                var speeds = new ChassisSpeeds(forwardVelocity, sidewaysVelocity, angularVelocity);
 
                 driveFieldRelative(speeds, robotPose.getRotation());
                 SmartDashboard.putNumber("F", forwardVelocity);
                 SmartDashboard.putNumber("S", sidewaysVelocity);
-                SmartDashboard.putNumber("A", angularVelcoity);
+                SmartDashboard.putNumber("A", angularVelocity);
             });
         }).orElse(Commands.none());
     }

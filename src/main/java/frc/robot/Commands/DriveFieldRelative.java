@@ -58,7 +58,7 @@ public class DriveFieldRelative extends Command {
 
         double vy = -(x * Constants.attainableMaxTranslationalSpeedMPS) / slowModeFactor;
         double vx = -(y * Constants.attainableMaxTranslationalSpeedMPS) / slowModeFactor;
-        double omega = (theta * Constants.attainableMaxRotationalVelocityRPS) / slowModeFactor;
+        double omega = -(theta * Constants.attainableMaxRotationalVelocityRPS) / slowModeFactor;
 
         SmartDashboard.putNumber("vx", vx);
         SmartDashboard.putNumber("vy", vy);
