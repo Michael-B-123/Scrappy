@@ -14,6 +14,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -23,6 +24,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -36,6 +38,7 @@ import static edu.wpi.first.wpilibj2.command.Commands.parallel;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.ArrayList;
 
 import org.photonvision.EstimatedRobotPose;
@@ -52,6 +55,9 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.GoalEndState;
+import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.util.PathPlannerLogging;
 
 public class Drivetrain extends SubsystemBase {
@@ -156,34 +162,68 @@ public class Drivetrain extends SubsystemBase {
         SmartDashboard.putBoolean("Crash avoidance", false);
     }
 
+    public Optional<Pose2d> getTargetPose(int tagId, Translation2d offset, Rotation2d theta) {
+        Optional<Pose3d> tag = Constants.Drivetrain.FieldLayout.getTagPose(tagId);
+        if (tag.isEmpty()) return Optional.empty();
+
+        Pose2d targetPose = tag.get().toPose2d().transformBy(new Transform2d(offset.unaryMinus(), theta));
+
+        return Optional.of(targetPose);
+    }
+
     public Command aimAtTag(int tagId, Translation2d offset, Rotation2d theta) {
-        var tag = Constants.Drivetrain.FieldLayout.getTagPose(tagId);
-        return tag.map(t -> {
-            var tagPose2d = t.toPose2d();
-            var tagToTarget = new Transform2d(offset.unaryMinus(), theta);
-            var targetPose = tagPose2d.transformBy(tagToTarget);
+        return getTargetPose(tagId, offset, theta)
+            .map(this::driveToPose)
+            .orElse(Commands.none());
+    }
 
-            SmartDashboard.putNumber("TX", targetPose.getX());
-            SmartDashboard.putNumber("TY", targetPose.getY());
-            SmartDashboard.putNumber("TT", targetPose.getRotation().getDegrees());
+    public Command driveToPose(Pose2d targetPose) {
+        return run(() -> {
+            Pose2d robotPose = getPose();
 
-            return run(()-> {
-                var robotPose = getPose();
-                var forwardVelocity = visionForwardBackController.calculate(robotPose.getX(), targetPose.getX());
-                if (Math.abs(forwardVelocity) < Constants.Drivetrain.autoAimDeadband) forwardVelocity = 0;
-                var sidewaysVelocity = visionSidewaysController.calculate(robotPose.getY(), targetPose.getY());
-                if (Math.abs(sidewaysVelocity) < Constants.Drivetrain.autoAimDeadband) sidewaysVelocity = 0;
-                var angularVelocity = visionRotationsController.calculate(robotPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
-                if (Math.abs(angularVelocity) < Constants.Drivetrain.autoAimDeadband) angularVelocity = 0;
+            double deadband = Constants.Drivetrain.autoAimDeadband;
 
-                var speeds = new ChassisSpeeds(forwardVelocity, sidewaysVelocity, angularVelocity);
+            double forwardVelocity = visionForwardBackController.calculate(robotPose.getX(), targetPose.getX());
+            forwardVelocity = Utils.deadband(forwardVelocity, deadband);
+            double sidewaysVelocity = visionSidewaysController.calculate(robotPose.getY(), targetPose.getY());
+            sidewaysVelocity = Utils.deadband(sidewaysVelocity, deadband);
+            double angularVelocity = visionRotationsController.calculate(robotPose.getRotation().getRadians(), targetPose.getRotation().getRadians());
+            angularVelocity = Utils.deadband(angularVelocity, deadband);
 
-                driveFieldRelative(speeds, robotPose.getRotation());
-                SmartDashboard.putNumber("F", forwardVelocity);
-                SmartDashboard.putNumber("S", sidewaysVelocity);
-                SmartDashboard.putNumber("A", angularVelocity);
-            });
-        }).orElse(Commands.none());
+            driveFieldRelative(new ChassisSpeeds(forwardVelocity, sidewaysVelocity, angularVelocity), robotPose.getRotation());
+        });
+    }
+
+    public Command aimAtTagPP(int tagId, Translation2d offset, Rotation2d theta) {
+        return getTargetPose(tagId, offset, theta)
+            .map(this::driveToPosePP)
+            .orElse(Commands.none());
+    }
+
+    public Command driveToPosePP(Pose2d targetPose) {
+        return Commands.defer(() -> {
+            Pose2d robotPose = getPose();
+            Translation2d delta = targetPose.getTranslation().minus(robotPose.getTranslation());
+
+            if (delta.getNorm() < 0.05) {
+                return Commands.none();
+            }
+
+            Rotation2d travelDirection = delta.getAngle();
+
+            PathPlannerPath path = new PathPlannerPath(
+                PathPlannerPath.waypointsFromPoses(List.of(
+                    new Pose2d(robotPose.getTranslation(), travelDirection),
+                    new Pose2d(targetPose.getTranslation(), travelDirection)
+                )),
+                new PathConstraints(3.0, 3.0, Units.degreesToRadians(540), Units.degreesToRadians(720)),
+                null,
+                new GoalEndState(0.0, targetPose.getRotation())
+            );
+            path.preventFlipping = true;
+
+            return AutoBuilder.followPath(path);
+        }, Set.of(this));
     }
 
     @Override
