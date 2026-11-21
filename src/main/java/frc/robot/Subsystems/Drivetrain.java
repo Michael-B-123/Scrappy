@@ -428,6 +428,7 @@ public class Drivetrain extends SubsystemBase {
     public void setModuleTargetStates(ChassisSpeeds chassisSpeeds, Translation2d centerOfRotation) {
         SwerveModuleState[] targetStates = kinematics.toSwerveModuleStates(chassisSpeeds, centerOfRotation);
         SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, Constants.attainableMaxModuleSpeedMPS);
+        chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
         for (int i = 0; i < modules.length; ++i) {
             modules[i].setTargetState(targetStates[i]);
         }
