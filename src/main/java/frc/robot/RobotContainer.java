@@ -26,6 +26,8 @@ public class RobotContainer {
     private final Trigger driveRightTrigger = driveController.rightTrigger(0.5);
     private final Trigger drivekLeftBumper = driveController.leftBumper();
     private final Trigger drivekRightBumper = driveController.rightBumper();
+    private final Trigger xButton = driveController.x();
+    private final Trigger bButton = driveController.b();
 
     public final Drivetrain drivetrain = new Drivetrain(Constants.Modules.moduleArray, driveController);
     
@@ -41,7 +43,8 @@ public class RobotContainer {
     }
 
     private void configureBindings() {
-        driveRightTrigger.whileTrue(drivetrain.aimAtTag(6, new Translation2d(-1, 0), Rotation2d.fromDegrees(-180)));
+        xButton.whileTrue(drivetrain.aimAtTag(6, new Translation2d(-1, 0), Rotation2d.fromDegrees(-180)));
+        bButton.whileTrue(drivetrain.aimAtTagPP(6, new Translation2d(-1, 0), Rotation2d.fromDegrees(-180)));
     }
 
     // public Command getAutonomousCommand() {

@@ -70,9 +70,9 @@ public class Drivetrain extends SubsystemBase {
     SlewRateLimiter translationXLimiter = new SlewRateLimiter(translationMaxAccelerationMetersPerSecondSquared);
     SlewRateLimiter translationYLimiter = new SlewRateLimiter(translationMaxAccelerationMetersPerSecondSquared);
     SlewRateLimiter rotationLimiter = new SlewRateLimiter(rotationMaxAccelerationRadiansPerSecondSquared);
-    private final PIDController visionForwardBackController = new PIDController(1.5, 0, 0);
-    private final PIDController visionSidewaysController = new PIDController(1.5, 0, 0);
-    private final PIDController visionRotationsController = new PIDController(1.5, 0, 0);
+    private final PIDController visionForwardBackController = new PIDController(Constants.Drivetrain.SpeedKP, 0, 0);
+    private final PIDController visionSidewaysController = new PIDController(Constants.Drivetrain.SpeedKP, 0, 0);
+    private final PIDController visionRotationsController = new PIDController(Constants.Drivetrain.SteerKP, 0, 0);
 
     private final SwerveDrivePoseEstimator poseEstimator;
     private boolean hasRecievedVisionMeasurement;
