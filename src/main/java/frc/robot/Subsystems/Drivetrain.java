@@ -240,29 +240,29 @@ public class Drivetrain extends SubsystemBase {
 
                 visionEstimate.ifPresent(e -> {
                     var targets = e.targetsUsed;
+                    int size = targets.size();
+                    double firstAmbiguity = size > 0 ? Math.abs(targets.get(0).getPoseAmbiguity()) : 1;
+                    double height = Math.abs(e.estimatedPose.getZ());
                     Pose2d estPose = e.estimatedPose.toPose2d();
+                    double xPose = estPose.getX();
+                    double yPose = estPose.getY();
+                    double distanceToCurrent = estPose.getTranslation().getDistance(poseEstimator.getEstimatedPosition().getTranslation());
+
                     field.getObject("vision pose").setPose(estPose);
                     
-                    if ((targets.size() == 1 && targets.get(0).getPoseAmbiguity() > 0.2) ||
-                            targets.size() == 0) {
+                    boolean sizeRejection = size == 0;
+                    boolean ambiguityRejection = size == 1 && firstAmbiguity > 0.2;
+                    boolean heightRejection = height > 0.5;
+                    boolean distanceRejection = distanceToCurrent > 5 && hasRecievedVisionMeasurement && DriverStation.isEnabled();
+                    boolean outOfBoundsRejection = 
+                        xPose < 0 || xPose > Constants.Drivetrain.FieldLayout.getFieldLength() ||
+                        yPose < 0 || yPose > Constants.Drivetrain.FieldLayout.getFieldWidth();
+
+                    if (sizeRejection || ambiguityRejection || heightRejection || distanceRejection || outOfBoundsRejection) {
                         return;
                     }
 
-                    if (Math.abs(e.estimatedPose.getZ()) > 0.5) {
-                        return;
-                    }
-
-                    if (estPose.getTranslation().getDistance(poseEstimator.getEstimatedPosition().getTranslation()) > 5 && 
-                        hasRecievedVisionMeasurement) {
-                        return;
-                    }
-
-                    if (estPose.getX() < 0 || estPose.getX() > Constants.Drivetrain.FieldLayout.getFieldLength() ||
-                        estPose.getY() < 0 || estPose.getY() > Constants.Drivetrain.FieldLayout.getFieldWidth()) {
-                        return;
-                    }
-
-                    if (!hasRecievedVisionMeasurement) {
+                    if (!hasRecievedVisionMeasurement && targets.size() > 1) {
                         poseEstimator.resetPose(estPose);
                         hasRecievedVisionMeasurement = true;
                         return;
@@ -426,16 +426,20 @@ public class Drivetrain extends SubsystemBase {
     }
 
     public void setModuleTargetStates(ChassisSpeeds chassisSpeeds, Translation2d centerOfRotation) {
+        chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
         SwerveModuleState[] targetStates = kinematics.toSwerveModuleStates(chassisSpeeds, centerOfRotation);
         SwerveDriveKinematics.desaturateWheelSpeeds(targetStates, Constants.attainableMaxModuleSpeedMPS);
-        chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, 0.02);
         for (int i = 0; i < modules.length; ++i) {
             modules[i].setTargetState(targetStates[i]);
         }
     }
 
     public SwerveModulePosition[] getModulePositions() {
-        return new SwerveModulePosition[] {modules[0].getModulePosition(),modules[1].getModulePosition(),modules[2].getModulePosition(),modules[3].getModulePosition()};
+        return new SwerveModulePosition[] {
+            modules[0].getModulePosition(),
+            modules[1].getModulePosition(),
+            modules[2].getModulePosition(),
+            modules[3].getModulePosition()};
     }
 
     public ChassisSpeeds getChasisSpeed() {

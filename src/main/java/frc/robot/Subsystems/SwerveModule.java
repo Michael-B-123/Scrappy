@@ -3,9 +3,8 @@ package frc.robot.Subsystems;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.spark.SparkAbsoluteEncoder;
-import com.revrobotics.spark.SparkBase.PersistMode;
-import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
@@ -19,7 +18,6 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -39,7 +37,6 @@ public class SwerveModule extends SubsystemBase{
     //module encoder 
     int encoderID;
     CANcoder moduleEncoder;
-    private static final String EncoderPreferenceKey = "EncoderOffset";
 
     //conversion factors
     final double WHEEL_DIAMETER = Units.inchesToMeters(4);
@@ -52,6 +49,7 @@ public class SwerveModule extends SubsystemBase{
 
     public SwerveModule(int driveMotorID, int steerMotorID, int encoderID){
         this.driveMotorID = driveMotorID;
+        this.encoderID = encoderID;
 
         //drive motor 
         driveMotor = new SparkMax(driveMotorID, MotorType.kBrushless);
@@ -70,6 +68,7 @@ public class SwerveModule extends SubsystemBase{
         //steer motor
         steerMotor = new SparkMax(steerMotorID, MotorType.kBrushless);
         SparkMaxConfig steerConfig = new SparkMaxConfig();
+        steerConfig.inverted(true);
         steerConfig.idleMode(IdleMode.kBrake);
         steerConfig.smartCurrentLimit(20);
         steerMotor.configure(steerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -91,7 +90,7 @@ public class SwerveModule extends SubsystemBase{
     public void setTargetState(SwerveModuleState targetState) {
         double currentAngle = getModuleAngRotations();
         targetState.optimize(Rotation2d.fromRotations(currentAngle));
-        steerMotor.set(-steerController.calculate(currentAngle, targetState.angle.getRotations()));
+        steerMotor.set(steerController.calculate(currentAngle, targetState.angle.getRotations()));
         targetState.speedMetersPerSecond *= targetState.angle.minus(Rotation2d.fromRotations(currentAngle)).getCos();
         var clampedSpeed = MathUtil.clamp(targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS, -1, 1);
         driveMotor.set(clampedSpeed); 
@@ -106,7 +105,6 @@ public class SwerveModule extends SubsystemBase{
             var rawEncoderValue = adjustedEncoderValue - offset;
             steerEncoderConfig.MagnetSensor.MagnetOffset = -rawEncoderValue;
             moduleEncoder.getConfigurator().apply(steerEncoderConfig);
-            Preferences.setDouble(EncoderPreferenceKey + encoderID, rawEncoderValue);
             if (Math.abs(moduleEncoder.getAbsolutePosition().waitForUpdate(0.1).getValueAsDouble()) < 0.01) {
                 System.out.println("Succesfully calibrated swerve " + encoderID);
             }

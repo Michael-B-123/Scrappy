@@ -33,7 +33,7 @@ public class Constants {
     public static final double DriveBaseRadius = moduleLocations[1].getNorm();
     public static final double attainableMaxModuleSpeedMPS = 4.572;
     public static final double attainableMaxTranslationalSpeedMPS = attainableMaxModuleSpeedMPS;
-    public static final double attainableMaxRotationalVelocityRPS = attainableMaxModuleSpeedMPS/DriveBaseRadius;
+    public static final double attainableMaxRotationalVelocityRPS = attainableMaxModuleSpeedMPS / DriveBaseRadius;
 
     public static final int PigeonID = 13;
 
@@ -95,26 +95,25 @@ public class Constants {
         //aim at tag smoother
         public static final double autoAimDeadband = 0.05;
 
-        //aim at tag override
+        //aim at tag custom tags
         List<AprilTag> Tags = List.of(
             new AprilTag(6, new Pose3d(
                 new Translation3d(5, 5, 0.3),
                 new Rotation3d(0, 0, Rotation2d.fromDegrees(180).getRadians())
             ))
         );
-        public static final AprilTagFieldLayout FieldLayout = new AprilTagFieldLayout(
-            Tags,10,10
-        );
 
-        //normal
-        // public static final AprilTagFieldLayout FieldLayout =
-        //     AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+        public static final boolean USE_TEST_FIELD = true;
 
-        //aim at tag trusts tag rotation
-        public static final Matrix<N3, N1> SingleTagStdDevs = VecBuilder.fill(0.1, 0.1, 0.1);
-        //normal
-        // public static final Matrix<N3, N1> SingleTagStdDevs = VecBuilder.fill(0.1, 0.1, 999999);
-        public static final Matrix<N3, N1> MultiTagStdDevs = VecBuilder.fill(0.05, 0.05, 999999);
+        public static final AprilTagFieldLayout FieldLayout = USE_TEST_FIELD
+            ? new AprilTagFieldLayout(Tags, 10, 10)
+            : AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
+
+        public static final Matrix<N3, N1> SingleTagStdDevs = USE_TEST_FIELD
+            ? VecBuilder.fill(0.1, 0.1, 0.1)
+            : VecBuilder.fill(0.1, 0.1, 999999);
+
+        public static final Matrix<N3, N1> MultiTagStdDevs = VecBuilder.fill(0.05, 0.05, 0.8);
 
         public static final double TranslationPow = 3;
         public static final double RotationPow = 3;
