@@ -16,24 +16,29 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.util.Units;
 import frc.robot.Subsystems.SwerveModule;
 
 public class Constants {
 
     public static final double Delta = 1e-2;
     
+    public static final double wheelBase = Units.inchesToMeters(15.0);
+    public static final double trackWidth = Units.inchesToMeters(15.0);
     public static final Translation2d[] moduleLocations = {
-        new Translation2d(0.1905, -0.1905),  //front right +-
-        new Translation2d(0.1905, 0.1905), //front left  ++
-        new Translation2d(-0.1905, 0.1905),  //rear left   -+
-        new Translation2d(-0.1905, -0.1905)  //rear right  --
+        new Translation2d(wheelBase / 2.0, trackWidth / 2.0), //front left  ++
+        new Translation2d(wheelBase / 2.0, -trackWidth / 2.0),  //front right +-
+        new Translation2d(-wheelBase / 2.0, trackWidth / 2.0),  //rear left   -+
+        new Translation2d(-wheelBase / 2.0, -trackWidth / 2.0)  //rear right  --
     };
 
     //velocity constranints for swerve desaturate
-    public static final double DriveBaseRadius = moduleLocations[1].getNorm();
+    public static final double DriveBaseRadius = moduleLocations[0].getNorm();
     public static final double attainableMaxModuleSpeedMPS = 4.572;
     public static final double attainableMaxTranslationalSpeedMPS = attainableMaxModuleSpeedMPS;
     public static final double attainableMaxRotationalVelocityRPS = attainableMaxModuleSpeedMPS / DriveBaseRadius;
+    
+    public static final double dutyCycleToVoltage = 12.0;
 
     public static final int PigeonID = 13;
 
@@ -57,8 +62,8 @@ public class Constants {
         public static final int RearRightDriveID   = 10, RearRightSteerID   = 11, RearRightEncoderID = 12;
 
         SwerveModule[] moduleArray = new SwerveModule[] {
-            new SwerveModule(FrontRightDriveID, FrontRightSteerID, FrontRightEncoderID),
             new SwerveModule(FrontLeftDriveID, FrontLeftSteerID, FrontLeftEncoderID),
+            new SwerveModule(FrontRightDriveID, FrontRightSteerID, FrontRightEncoderID),
             new SwerveModule(RearLeftDriveID, RearLeftSteerID, RearLeftEncoderID),
             new SwerveModule(RearRightDriveID, RearRightSteerID, RearRightEncoderID)
         };

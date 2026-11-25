@@ -455,8 +455,8 @@ public class Drivetrain extends SubsystemBase {
     public void initSendable(SendableBuilder builder) {
         builder.setSmartDashboardType("SwerveDrive");
 
-        var frontLeftModule = modules[1];
-        var frontRightModule = modules[0];
+        var frontLeftModule = modules[0];
+        var frontRightModule = modules[1];
         var backLeftModule = modules[2];
         var backRightModule = modules[3];
     

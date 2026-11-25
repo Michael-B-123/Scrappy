@@ -90,10 +90,14 @@ public class SwerveModule extends SubsystemBase{
     public void setTargetState(SwerveModuleState targetState) {
         double currentAngle = getModuleAngRotations();
         targetState.optimize(Rotation2d.fromRotations(currentAngle));
-        steerMotor.set(steerController.calculate(currentAngle, targetState.angle.getRotations()));
+
+        double steerOutput = steerController.calculate(currentAngle, targetState.angle.getRotations());
+        double clampedSteerOutput = MathUtil.clamp(steerOutput, -1, 1);
+        steerMotor.setVoltage(clampedSteerOutput * Constants.dutyCycleToVoltage);
+
         targetState.speedMetersPerSecond *= targetState.angle.minus(Rotation2d.fromRotations(currentAngle)).getCos();
-        var clampedSpeed = MathUtil.clamp(targetState.speedMetersPerSecond/Constants.attainableMaxModuleSpeedMPS, -1, 1);
-        driveMotor.set(clampedSpeed); 
+        double clampedSpeed = MathUtil.clamp(targetState.speedMetersPerSecond / Constants.attainableMaxModuleSpeedMPS, -1, 1);
+        driveMotor.setVoltage(clampedSpeed * Constants.dutyCycleToVoltage);
     }
 
     public Command calibrate() {
